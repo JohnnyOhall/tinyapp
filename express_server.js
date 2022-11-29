@@ -21,6 +21,9 @@ const PORT = 8080; // default port 8080
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 
+
+
+// -------------------------------- GLOBAL FUNCTIONS -------------------------------- //
 const generateRandomString = () => { // Generates random 6 character string for new URL
   return ((Math.random() + 1) * 0x10000).toString(36).substring(6);
 };
@@ -38,7 +41,7 @@ const urlDatabase = {
 // ----------------------------------- GET ROUTES -----------------------------------//
 app.get("/", (req, res) => {
   res.send("Hello!");
-  console.log(`client request to view homepage.`);
+  console.log('client is viewing homepage.');
 });
 
 app.listen(PORT, () => {
@@ -47,7 +50,7 @@ app.listen(PORT, () => {
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
-  console.log(`client request for urlDatabase.json file`);
+  console.log('client is viewing urlDatabase.json file');
 });
 
 // Example to use HTML Tags inside of VS (Not Required...)
@@ -57,12 +60,12 @@ app.get("/urls.json", (req, res) => {
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
-  console.log(`Client request to view URLs index`);
+  console.log('Client is viewing URLs index');
 });
 
 app.get("/urls/new", (req, res) => { // page to create new URL if not in database
   res.render("urls_new");
-  console.log(`Client request to view URL creation page`);
+  console.log('Client is viewing URL creation page');
 });
 
 app.get("/urls/:id", (req, res) => { // Redirect to summary ID page
@@ -70,14 +73,14 @@ app.get("/urls/:id", (req, res) => { // Redirect to summary ID page
   const longURL = urlDatabase[id];
   const templateVars = { id, longURL};
   res.render("urls_show", templateVars);
-  console.log(`Client request to view ${id} (${longURL}) summary page`);
+  console.log(`Client is viewing ${id} (${longURL}) summary page`);
 });
 
 app.get("/u/:id", (req, res) => {  // Redirect to actual website
   const id = req.params.id;
   const longURL = urlDatabase[id];
   //console.log(urlDatabase[id])
-  console.log(`Client redirect request for: ${id} (${longURL})`);
+  console.log(`Client is being redircted: ${longURL}`);
   res.redirect(longURL);
 });
 
@@ -90,6 +93,7 @@ app.post("/urls/:id/delete", (req, res) => {
   console.log(`Client delete request for: ${id} (${longURL})`);
   delete urlDatabase[id]; // Delete requested item set by delete button
   res.redirect(`/urls`);
+  console.log('Client is being redirected to: /urls/')
 });
 
 app.post("/urls/:id/update", (req, res) => {
@@ -108,23 +112,29 @@ app.post("/urls/:id/update", (req, res) => {
   res.redirect(`/urls`); // redirect to URLs index
   longURL = urlDatabase[id]; // update longURL variable after edit
   console.log(`New URL: ${id}(${longURL})`);
+  console.log('Client is being redirected to: /urls/')
 });
 
 app.post("/urls/:id/", (req, res) => {
   const id = req.params.id;
   res.redirect(`/urls/${id}`);
+  console.log(`Client request to view ${id} (${longURL}) summary page`);
 });
 
 app.post("/urls", (req, res) => {
   console.log(`Client request to add short url: ${req.body}`);
+
   const randomName = generateRandomString();
   const newLongUrl = req.body.longURL;
+
   if (newLongUrl.slice(0,8) === 'https://' || newLongUrl.slice(0,7) === 'http://') {
     urlDatabase[randomName] = newLongUrl;  // do not add https:// if already included in address
   } else {
     urlDatabase[randomName] = `https://${newLongUrl}`;  // check if contains http: already
   }
+
   res.redirect(`/urls/${randomName}`);
+  console.log('Client is being redirected to: /urls/')
 });
 
 
