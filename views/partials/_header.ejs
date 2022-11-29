@@ -1,4 +1,6 @@
 <header>
+
+  <!--HOMEPAGE BUTTON-->
   <nav class="navbar navbar-expand-md navbar-dark bg-success">
     <a class="navbar-brand" href="/urls">TinyApp</a>
     <button
@@ -12,11 +14,42 @@
     >
       <span class="navbar-toggler-icon"></span>
     </button>
+    
+
+    <!--NAVIGATION BUTTONS-->
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
       <div class="navbar-nav">
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
     </div>
+
+
+    <!--LOGIN BUTTON-->
+    <% if (!username){ %>  
+      <div class="collapse navbar-collapse" id="navbarNavAltMarkup"></div>
+        <form method="POST" action="/login/"><input
+          type="text"
+          name="username"
+          placeholder="Username"
+          style="width: 200px; margin: 1em;"
+        />
+        <button 
+          type="submit" 
+          class="btn btn-success btn-sm" 
+          style="float: right; width: 150px; margin: 1em; border: 1px solid #ffffff;"
+        >Login</button></form>
+      </div>
+    <% } else if (username){ %>
+      <div class="collapse navbar-collapse" id="navbarNavAltMarkup"></div>
+        <span class="navbar-brand">Logged in as: <%= username%></span>
+        <form method="POST" action="/logout">
+        <button 
+          type="submit" 
+          class="btn btn-success btn-sm" 
+          style="float: right; width: 150px; margin: 1em; border: 1px solid #ffffff;"
+        >Logout</button></form>
+      </div>
+    <% } %>
   </nav>
 </header>

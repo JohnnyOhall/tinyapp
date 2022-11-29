@@ -15,12 +15,13 @@
 
 // -------------------------- GLOBAL VARIABLES && REQUIRES -------------------------- //
 const express = require("express");
+const cookieParser = require("cookie-parser");
 const app = express();
 const PORT = 8080; // default port 8080
 
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
-
+app.use(cookieParser());
 
 
 // -------------------------------- GLOBAL FUNCTIONS -------------------------------- //
@@ -58,20 +59,24 @@ app.get("/urls.json", (req, res) => {
 //   res.send("<html><body>Hello <b>World</b></body></html>\n");
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const username = req.cookies.username
+  const templateVars = { urls: urlDatabase, username};
   res.render("urls_index", templateVars);
   console.log('Client is viewing URLs index');
 });
 
 app.get("/urls/new", (req, res) => { // page to create new URL if not in database
-  res.render("urls_new");
+  const username = req.cookies.username
+  const templateVars = {username};
+  res.render("urls_new", templateVars);
   console.log('Client is viewing URL creation page');
 });
 
 app.get("/urls/:id", (req, res) => { // Redirect to summary ID page
   const id = req.params.id;
   const longURL = urlDatabase[id];
-  const templateVars = { id, longURL};
+  const username = req.cookies.username
+  const templateVars = { id, longURL, username};
   res.render("urls_show", templateVars);
   console.log(`Client is viewing ${id} (${longURL}) summary page`);
 });
@@ -87,6 +92,8 @@ app.get("/u/:id", (req, res) => {  // Redirect to actual website
 
 
 // ----------------------------------- POST ROUTES ----------------------------------//
+
+//------Delete short URL key------//
 app.post("/urls/:id/delete", (req, res) => {
   const id = req.params.id;
   const longURL = urlDatabase[id];
@@ -96,6 +103,7 @@ app.post("/urls/:id/delete", (req, res) => {
   console.log('Client is being redirected to: /urls/');
 });
 
+//------Update existing URL with new LongURL------//
 app.post("/urls/:id/update", (req, res) => {
   const id = req.params.id;
   let longURL = urlDatabase[id];
@@ -115,14 +123,16 @@ app.post("/urls/:id/update", (req, res) => {
   console.log('Client is being redirected to: /urls/');
 });
 
+//------view specific URL summary page------//
 app.post("/urls/:id/", (req, res) => {
   const id = req.params.id;
   let longURL = urlDatabase[id];
-  
+
   res.redirect(`/urls/${id}`);
   console.log(`Client request to view ${id} (${longURL}) summary page`);
 });
 
+//------Add new URL------//
 app.post("/urls", (req, res) => {
   console.log(`Client request to add short url: ${req.body}`);
 
@@ -139,6 +149,21 @@ app.post("/urls", (req, res) => {
   console.log('Client is being redirected to: /urls/');
 });
 
+//------Login requests------//
+app.post("/login", (req, res) => {
+  userName = req.body.username // was req.body.username
+  res.cookie('username', userName);
+  console.log(`Client login request for: ${userName}`);
+  res.redirect('back');
+})
+
+//------Logout requests------//
+app.post("/logout", (req, res) => {
+  const username = req.cookies.username
+  console.log(`logout request for ${username}`)
+  res.clearCookie('username');
+  res.redirect('back');
+})
 
 
 // ----------------------------------- TO DO LIST -----------------------------------//
