@@ -34,9 +34,11 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
-app.get("/urls/new", (req, res) => {
+app.get("/urls/new", (req, res) => { // page to create new URL if not in database
   res.render("urls_new");
 });
+
+// check for duplicate key values as edge case
 
 app.post("/urls", (req, res) => {
   console.log(req.body); // Log the POST request body to the console
@@ -51,14 +53,14 @@ app.post("/urls", (req, res) => {
   console.log(urlDatabase)
 });
 
-app.get("/urls/:id", (req, res) => {
+app.get("/urls/:id", (req, res) => { // Redirect to summary ID page
   const id = req.params.id
   const longURL = urlDatabase[id]
   const templateVars = { id, longURL};
   res.render("urls_show", templateVars);
 });
 
-app.get("/u/:id", (req, res) => {
+app.get("/u/:id", (req, res) => {  // Redirect to actual website
   const id = req.params.id
   const longURL = urlDatabase[id]
   //console.log(urlDatabase[id])
