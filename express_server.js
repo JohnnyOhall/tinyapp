@@ -59,14 +59,14 @@ app.get("/urls.json", (req, res) => {
 //   res.send("<html><body>Hello <b>World</b></body></html>\n");
 
 app.get("/urls", (req, res) => {
-  const username = req.cookies.username
+  const username = req.cookies.username;
   const templateVars = { urls: urlDatabase, username};
   res.render("urls_index", templateVars);
   console.log('Client is viewing URLs index');
 });
 
 app.get("/urls/new", (req, res) => { // page to create new URL if not in database
-  const username = req.cookies.username
+  const username = req.cookies.username;
   const templateVars = {username};
   res.render("urls_new", templateVars);
   console.log('Client is viewing URL creation page');
@@ -75,7 +75,7 @@ app.get("/urls/new", (req, res) => { // page to create new URL if not in databas
 app.get("/urls/:id", (req, res) => { // Redirect to summary ID page
   const id = req.params.id;
   const longURL = urlDatabase[id];
-  const username = req.cookies.username
+  const username = req.cookies.username;
   const templateVars = { id, longURL, username};
   res.render("urls_show", templateVars);
   console.log(`Client is viewing ${id} (${longURL}) summary page`);
@@ -151,19 +151,19 @@ app.post("/urls", (req, res) => {
 
 //------Login requests------//
 app.post("/login", (req, res) => {
-  userName = req.body.username // was req.body.username
+  const userName = req.body.username; // was req.body.username
   res.cookie('username', userName);
   console.log(`Client login request for: ${userName}`);
   res.redirect('back');
-})
+});
 
 //------Logout requests------//
 app.post("/logout", (req, res) => {
-  const username = req.cookies.username
-  console.log(`logout request for ${username}`)
+  const username = req.cookies.username;
+  console.log(`logout request for ${username}`);
   res.clearCookie('username');
   res.redirect('back');
-})
+});
 
 
 // ----------------------------------- TO DO LIST -----------------------------------//
