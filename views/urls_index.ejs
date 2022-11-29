@@ -34,6 +34,7 @@
             <tr>
               <td><a href="/urls/<%= id %>"><%= id %></a></td> <!-- Short address -->
               <td><a href="<%= urls[id] %>"><%= urls[id] %></a></td> <!-- Long address -->
+              <td><form method="POST" action="/urls/<%= id %>/delete"><button type="submit">Delete</button></form></td>
             </tr>
           <% } %>
         </tbody>
