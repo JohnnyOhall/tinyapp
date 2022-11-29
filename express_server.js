@@ -26,6 +26,7 @@ const generateRandomString = () => { // Generates random 6 character string for 
 };
 
 
+
 // ------------------------------------ DATABASE -------------------------------------//
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -34,7 +35,7 @@ const urlDatabase = {
 
 
 
-// ------------------------------------- ROUTES -------------------------------------//
+// ----------------------------------- GET ROUTES -----------------------------------//
 app.get("/", (req, res) => {
   res.send("Hello!");
   console.log(`client request to view homepage.`);
@@ -64,21 +65,6 @@ app.get("/urls/new", (req, res) => { // page to create new URL if not in databas
   console.log(`Client request to view URL creation page`);
 });
 
-// TO DO [ ] : Check for duplicate key values as edge case
-// TO DO [ ] : Check for missing www. and reject as invalid (maybe)
-
-app.post("/urls", (req, res) => {
-  console.log(`Client request to add short url: ${req.body}`);
-  const randomName = generateRandomString();
-  const newLongUrl = req.body.longURL;
-  if (newLongUrl.slice(0,8) === 'https://' || newLongUrl.slice(0,7) === 'http://') {
-    urlDatabase[randomName] = newLongUrl;  // do not add https:// if already included in address
-  } else {
-    urlDatabase[randomName] = `https://${newLongUrl}`;  // check if contains http: already
-  }
-  res.redirect(`/urls/${randomName}`);
-});
-
 app.get("/urls/:id", (req, res) => { // Redirect to summary ID page
   const id = req.params.id;
   const longURL = urlDatabase[id];
@@ -95,6 +81,9 @@ app.get("/u/:id", (req, res) => {  // Redirect to actual website
   res.redirect(longURL);
 });
 
+
+
+// ----------------------------------- POST ROUTES ----------------------------------//
 app.post("/urls/:id/delete", (req, res) => {
   const id = req.params.id;
   const longURL = urlDatabase[id];
@@ -126,3 +115,20 @@ app.post("/urls/:id/", (req, res) => {
   res.redirect(`/urls/${id}`);
 });
 
+app.post("/urls", (req, res) => {
+  console.log(`Client request to add short url: ${req.body}`);
+  const randomName = generateRandomString();
+  const newLongUrl = req.body.longURL;
+  if (newLongUrl.slice(0,8) === 'https://' || newLongUrl.slice(0,7) === 'http://') {
+    urlDatabase[randomName] = newLongUrl;  // do not add https:// if already included in address
+  } else {
+    urlDatabase[randomName] = `https://${newLongUrl}`;  // check if contains http: already
+  }
+  res.redirect(`/urls/${randomName}`);
+});
+
+
+
+// ----------------------------------- TO DO LIST -----------------------------------//
+//
+//   [ ] : Check for duplicate key values as edge case
