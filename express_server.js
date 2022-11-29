@@ -99,7 +99,7 @@ app.post("/urls/:id/delete", (req, res) => {
   const longURL = urlDatabase[id];
   console.log(`Client delete request for: ${id} (${longURL})`);
   delete urlDatabase[id]; // Delete requested item set by delete button
-  res.redirect(`/urls`);
+  res.redirect('/urls');
   console.log('Client is being redirected to: /urls/');
 });
 
@@ -162,7 +162,8 @@ app.post("/logout", (req, res) => {
   const username = req.cookies.username;
   console.log(`logout request for ${username}`);
   res.clearCookie('username');
-  res.redirect('back');
+  res.redirect('/urls');
+  console.log('Client is being redirected to: /urls/');
 });
 
 
