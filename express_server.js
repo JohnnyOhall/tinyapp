@@ -93,7 +93,7 @@ app.post("/urls/:id/delete", (req, res) => {
   console.log(`Client delete request for: ${id} (${longURL})`);
   delete urlDatabase[id]; // Delete requested item set by delete button
   res.redirect(`/urls`);
-  console.log('Client is being redirected to: /urls/')
+  console.log('Client is being redirected to: /urls/');
 });
 
 app.post("/urls/:id/update", (req, res) => {
@@ -112,11 +112,13 @@ app.post("/urls/:id/update", (req, res) => {
   res.redirect(`/urls`); // redirect to URLs index
   longURL = urlDatabase[id]; // update longURL variable after edit
   console.log(`New URL: ${id}(${longURL})`);
-  console.log('Client is being redirected to: /urls/')
+  console.log('Client is being redirected to: /urls/');
 });
 
 app.post("/urls/:id/", (req, res) => {
   const id = req.params.id;
+  let longURL = urlDatabase[id];
+  
   res.redirect(`/urls/${id}`);
   console.log(`Client request to view ${id} (${longURL}) summary page`);
 });
@@ -134,7 +136,7 @@ app.post("/urls", (req, res) => {
   }
 
   res.redirect(`/urls/${randomName}`);
-  console.log('Client is being redirected to: /urls/')
+  console.log('Client is being redirected to: /urls/');
 });
 
 
