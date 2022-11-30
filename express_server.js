@@ -26,25 +26,29 @@ app.use(cookieParser());
 const serverMsg = console.log;
 
 // -------------------------------- GLOBAL FUNCTIONS -------------------------------- //
-const generateRandomString = () => { // Generates random 6 character string for new URL
+
+// Generates random 6 character string for new URL
+const generateRandomString = () => {
   return ((Math.random() + 1) * 0x10000).toString(36).substring(6);
 };
 
+// Check if email stored in cookie is also in users database
 const getUserByEmail = (req) => {
-  if (req.cookies.user){
+  if (req.cookies.user) {
     return req.cookies.user.id;
   } else {
-    return {}
+    return {};
   }
 };
 
+// Function to check if user submitted URL has http:// or https://
 const httpCheck = (newURL) => {
   if (newURL.slice(0,8) === 'https://' || newURL.slice(0,7) === 'http://') {
     return newURL;  // do not add https:// if already included in address
   } else {
     return `https://${newURL}`;  // check if contains http: already
   }
-}
+};
 
 
 // ------------------------------------ DATABASE -------------------------------------//
@@ -67,6 +71,8 @@ const users = {
 };
 
 // ----------------------------------- GET ROUTES -----------------------------------//
+
+// Homepage
 app.get("/", (req, res) => {
   res.send("Hello!");
   
@@ -77,18 +83,16 @@ app.listen(PORT, () => {
   serverMsg(`TinyApp listening on port ${PORT}!`);
 });
 
+// urls JSON output page
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 
   serverMsg('client is viewing urlDatabase.json file');
 });
 
-// Example to use HTML Tags inside of VS (Not Required...)
-// app.get("/hello", (req, res) => {
-//   res.send("<html><body>Hello <b>World</b></body></html>\n");
-
+// page to list all saved urls
 app.get("/urls", (req, res) => {
-  const user = users[getUserByEmail(req)]
+  const user = users[getUserByEmail(req)];
   const templateVars = { urls: urlDatabase, user};
 
   res.render("urls_index", templateVars);
@@ -96,8 +100,9 @@ app.get("/urls", (req, res) => {
   serverMsg('Client is viewing URLs index');
 });
 
-app.get("/urls/new", (req, res) => { // page to create new URL if not in database
-  const user = users[getUserByEmail(req)]
+// page to create new URL if not in database
+app.get("/urls/new", (req, res) => {
+  const user = users[getUserByEmail(req)];
   const templateVars = {user};
 
   res.render("urls_new", templateVars);
@@ -105,10 +110,11 @@ app.get("/urls/new", (req, res) => { // page to create new URL if not in databas
   serverMsg('Client is viewing URL creation page');
 });
 
-app.get("/urls/:id", (req, res) => { // Redirect to summary ID page
+// Specific summary page unique for each id
+app.get("/urls/:id", (req, res) => {
   const id = req.params.id;
   const longURL = urlDatabase[id];
-  const user = users[getUserByEmail(req)]
+  const user = users[getUserByEmail(req)];
   const templateVars = { id, longURL, user};
 
   res.render("urls_show", templateVars);
@@ -116,7 +122,8 @@ app.get("/urls/:id", (req, res) => { // Redirect to summary ID page
   serverMsg(`Client is viewing ${id} (${longURL}) summary page`);
 });
 
-app.get("/u/:id", (req, res) => {  // Redirect to actual website
+// Redirect to actual website using TinyApp short URL
+app.get("/u/:id", (req, res) => {
   const id = req.params.id;
   const longURL = urlDatabase[id];
 
@@ -125,14 +132,15 @@ app.get("/u/:id", (req, res) => {  // Redirect to actual website
   res.redirect(longURL);
 });
 
+// Register page to add user to database
 app.get("/register", (req,res) => {
-  const user = users[getUserByEmail(req)]
+  const user = users[getUserByEmail(req)];
   const templateVars = {user};
 
-  res.render("urls_register", templateVars)
+  res.render("urls_register", templateVars);
 
   serverMsg(`Client is veiwing urls/register`);
-})
+});
 
 
 
@@ -159,7 +167,7 @@ app.post("/urls/:id/update", (req, res) => {
 
   serverMsg(`Client update request for: ${id} (${longURL})`);
 
-  urlDatabase[id] = httpCheck(editedUrl) // update long URL and checks for http
+  urlDatabase[id] = httpCheck(editedUrl); // update long URL and checks for http
 
   res.redirect(`/urls`); // redirect to URLs index
   longURL = urlDatabase[id]; // update longURL variable after edit
@@ -175,7 +183,7 @@ app.post("/urls", (req, res) => {
   const randomName = generateRandomString();
   const newLongUrl = req.body.longURL;
 
-  urlDatabase[randomName] = httpCheck(newLongUrl) // Adds new URL and checks for http
+  urlDatabase[randomName] = httpCheck(newLongUrl); // Adds new URL and checks for http
 
   res.redirect(`/urls/${randomName}`);
 
@@ -206,36 +214,33 @@ app.post("/logout", (req, res) => {
 
 //------User Registration------//
 app.post("/register", (req,res) => {
-if (!req.body.email || !req.body.password) {
-  res.status(400).send('Invalid Username/Address')
-  serverMsg(`Server response 400: Invalid username/address entered: ${req.body.email, req.body.password}`)
-}
-
-for (const user in users) {
-  if (req.body.email === users[user].email) {
-    res.status(400).send('email already exists.')
-    serverMsg(`Server response 400: Email ${req.body.email} already exists`)
+  if (!req.body.email || !req.body.password) {
+    res.status(400).send('Invalid Username/Address');
+    serverMsg(`Server response 400: Invalid username/address entered: ${req.body.email, req.body.password}`);
   }
-}
 
-const email = req.body.email
-const password = req.body.password
-const randomID = generateRandomString()
+  for (const user in users) {
+    if (req.body.email === users[user].email) {
+      res.status(400).send('email already exists.');
+      serverMsg(`Server response 400: Email ${req.body.email} already exists`);
+    }
+  }
 
-serverMsg(`User creation request for: @: ${email} P: ${password}`)
+  const email = req.body.email;
+  const password = req.body.password;
+  const randomID = generateRandomString();
 
-users[randomID] = {
-  id: randomID,
-  email,
-  password
-}
-res.cookie('user', users[randomID])
-res.redirect('/urls');
+  serverMsg(`User creation request for: @: ${email} P: ${password}`);
 
-serverMsg(`User ${email} created successfully, redirect to /urls.`)
+  // Set new user to users object
+  users[randomID] = {
+    id: randomID,
+    email,
+    password
+  };
+
+  res.cookie('user', users[randomID]); // Set user cookie in browser
+  res.redirect('/urls');
+
+  serverMsg(`User ${email} created successfully, redirect to /urls.`);
 });
-
-
-// ----------------------------------- TO DO LIST -----------------------------------//
-//
-//   [ ] : Check for duplicate key values as edge case
