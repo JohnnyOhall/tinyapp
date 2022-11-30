@@ -50,6 +50,22 @@ const httpCheck = (newURL) => {
   }
 };
 
+const invalidCheck = (req, res) => {
+  if (!req.body.email || !req.body.password) {
+    serverMsg(`Server response 400: Invalid username/address entered: ${req.body.email, req.body.password}`)
+    res.status(400).send('Invalid Username/Address');
+    return
+  }
+}
+
+const registeredCheck = (req) => {
+  for (const user in users) {
+    if (req.body.email === users[user].email) {
+      return user
+    }
+  }
+}
+
 
 // ------------------------------------ DATABASE -------------------------------------//
 const urlDatabase = {
@@ -200,18 +216,12 @@ app.post("/urls", (req, res) => {
 
 //------User Registration------//
 app.post("/register", (req,res) => {
-  if (!req.body.email || !req.body.password) {
-    res.status(400).send('Invalid Username/Address');
-    serverMsg(`Server response 400: Invalid username/address entered: ${req.body.email, req.body.password}`);
-    return;
-  }
+  invalidCheck(req, res)
 
-  for (const user in users) {
-    if (req.body.email === users[user].email) {
-      res.status(400).send('email already exists.');
-      serverMsg(`Server response 400: Email ${req.body.email} already exists`);
-      return;
-    }
+  if (registeredCheck(req)) {
+    res.status(401).send('email already exists, please <a href="/login">login</a>.');
+    serverMsg(`Server response 400: Email ${req.body.email} already exists`);
+    return;
   }
 
   const email = req.body.email;
@@ -224,7 +234,7 @@ app.post("/register", (req,res) => {
   users[randomID] = {
     id: randomID,
     email,
-    password
+    password // <-- Not sure if needed
   };
 
   res.cookie('user', users[randomID]); // Set user cookie in browser
@@ -233,42 +243,27 @@ app.post("/register", (req,res) => {
   serverMsg(`User ${email} created successfully, redirect to /urls.`);
 });
 
+//------Login requests------//
 app.post("/login", (req, res) => {
 
-  serverMsg(`this happened: ${req.body}`);
-
   // check if post input is valid
-  if (!req.body.email || !req.body.password) {
-    res.status(400).send('Invalid Username/Address');
-    serverMsg(`Server response 400: Invalid username/address entered: ${req.body.email, req.body.password}`);
-    return;
-  }
+  invalidCheck(req, res)
 
-  let registered = false;
-  let userID;
-
-  // Check if email exists in database
-  for (const user in users) {
-    if (req.body.email === users[user].email) {
-      userID = user;
-      registered = true;
-    }
-  }
-
+  // Set userID and email
+  let userID = registeredCheck(req);
   const email = req.body.email;
+  const password = req.body.password;
 
-  // Return 400 error if email is not found in database
-  if (!registered) {
-    res.status(400).send('Email not found, please <a href="/register">Register here');
+  // Return 400 error if UserID/Email is not found in database
+  if (!userID) {
+    res.status(403).send('Email not found, please <a href="/register">Register</a> here.');
     serverMsg(`client login attempt with email: ${email}, server error: 400, email does not exist`);
     return;
   }
 
-  const password = req.body.password;
-
   // Check if password matches database password
   if (users[userID].password !== password) {
-    res.status(400).send('Invalid password');
+    res.status(403).send('Invalid password');
     serverMsg('client entered invalid password, server error: 400');
     return;
   }
@@ -277,7 +272,7 @@ app.post("/login", (req, res) => {
   const cookieID = {
     id: userID,
     email,
-    password
+    password //<--- not sure if needed
   };
 
   // Successful Login, set cookie and redirect to /urls
@@ -294,7 +289,7 @@ app.post("/logout", (req, res) => {
   serverMsg(`logout request for ${username}`);
   
   res.clearCookie('user');
-  res.redirect('/urls');
+  res.redirect('/login');
 
-  serverMsg('Client is being redirected to: /urls/');
+  serverMsg('Client is being redirected to: /login');
 });
