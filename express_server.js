@@ -37,7 +37,18 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-
+const users = {
+  userRandomID: {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur",
+  },
+  user2RandomID: {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk",
+  },
+};
 
 // ----------------------------------- GET ROUTES -----------------------------------//
 app.get("/", (req, res) => {
@@ -59,15 +70,19 @@ app.get("/urls.json", (req, res) => {
 //   res.send("<html><body>Hello <b>World</b></body></html>\n");
 
 app.get("/urls", (req, res) => {
-  const username = req.cookies.username;
-  const templateVars = { urls: urlDatabase, username};
+  const userID = req.cookies.user.id;
+  const user = users[userID]
+  
+  const templateVars = { urls: urlDatabase, user};
   res.render("urls_index", templateVars);
   console.log('Client is viewing URLs index');
 });
 
 app.get("/urls/new", (req, res) => { // page to create new URL if not in database
-  const username = req.cookies.username;
-  const templateVars = {username};
+  const userID = req.cookies.user.id;
+  const user = users[userID]
+
+  const templateVars = {user};
   res.render("urls_new", templateVars);
   console.log('Client is viewing URL creation page');
 });
@@ -75,8 +90,12 @@ app.get("/urls/new", (req, res) => { // page to create new URL if not in databas
 app.get("/urls/:id", (req, res) => { // Redirect to summary ID page
   const id = req.params.id;
   const longURL = urlDatabase[id];
-  const username = req.cookies.username;
-  const templateVars = { id, longURL, username};
+
+  const userID = req.cookies.user.id;
+  const user = users[userID]
+
+  const templateVars = { id, longURL, user};
+
   res.render("urls_show", templateVars);
   console.log(`Client is viewing ${id} (${longURL}) summary page`);
 });
@@ -88,6 +107,14 @@ app.get("/u/:id", (req, res) => {  // Redirect to actual website
   console.log(`Client is being redircted: ${longURL}`);
   res.redirect(longURL);
 });
+
+app.get("/register", (req,res) => {
+  const userID = req.cookies.user.id;
+  const user = users[userID]
+  const templateVars = {user};
+  res.render("urls_register", templateVars)
+  console.log(`Client is veiwing urls/register`);
+})
 
 
 
@@ -155,6 +182,23 @@ app.post("/logout", (req, res) => {
   res.clearCookie('username');
   res.redirect('/urls');
   console.log('Client is being redirected to: /urls/');
+});
+
+//------User Registration------//
+app.post("/register", (req,res) => {
+const email = req.body.email
+const password = req.body.password
+const randomID = generateRandomString()
+console.log(`User creation request for: @: ${email} P: ${password}`)
+
+users[randomID] = {
+  id: randomID,
+  email,
+  password
+}
+res.cookie('user', users[randomID])
+res.redirect('back');
+console.log(`User ${email} created successfully, redirect to /urls.`)
 });
 
 
