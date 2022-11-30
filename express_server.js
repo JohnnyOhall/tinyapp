@@ -52,19 +52,19 @@ const httpCheck = (newURL) => {
 
 const invalidCheck = (req, res) => {
   if (!req.body.email || !req.body.password) {
-    serverMsg(`Server response 400: Invalid username/address entered: ${req.body.email, req.body.password}`)
+    serverMsg(`Server response 400: Invalid username/address entered: ${req.body.email, req.body.password}`);
     res.status(400).send('Invalid Username/Address');
-    return
+    return;
   }
-}
+};
 
 const registeredCheck = (req) => {
   for (const user in users) {
     if (req.body.email === users[user].email) {
-      return user
+      return user;
     }
   }
-}
+};
 
 
 // ------------------------------------ DATABASE -------------------------------------//
@@ -216,7 +216,7 @@ app.post("/urls", (req, res) => {
 
 //------User Registration------//
 app.post("/register", (req,res) => {
-  invalidCheck(req, res)
+  invalidCheck(req, res);
 
   if (registeredCheck(req)) {
     res.status(401).send('email already exists, please <a href="/login">login</a>.');
@@ -247,7 +247,7 @@ app.post("/register", (req,res) => {
 app.post("/login", (req, res) => {
 
   // check if post input is valid
-  invalidCheck(req, res)
+  invalidCheck(req, res);
 
   // Set userID and email
   let userID = registeredCheck(req);
