@@ -23,12 +23,28 @@ app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+const serverMsg = console.log;
 
 // -------------------------------- GLOBAL FUNCTIONS -------------------------------- //
 const generateRandomString = () => { // Generates random 6 character string for new URL
   return ((Math.random() + 1) * 0x10000).toString(36).substring(6);
 };
 
+const getUserByEmail = (req) => {
+  if (req.cookies.user){
+    return req.cookies.user.id;
+  } else {
+    return {}
+  }
+};
+
+const httpCheck = (newURL) => {
+  if (newURL.slice(0,8) === 'https://' || newURL.slice(0,7) === 'http://') {
+    return newURL;  // do not add https:// if already included in address
+  } else {
+    return `https://${newURL}`;  // check if contains http: already
+  }
+}
 
 
 // ------------------------------------ DATABASE -------------------------------------//
@@ -53,16 +69,18 @@ const users = {
 // ----------------------------------- GET ROUTES -----------------------------------//
 app.get("/", (req, res) => {
   res.send("Hello!");
-  console.log('client is viewing homepage.');
+  
+  serverMsg('client is viewing homepage.');
 });
 
 app.listen(PORT, () => {
-  console.log(`TinyApp listening on port ${PORT}!`);
+  serverMsg(`TinyApp listening on port ${PORT}!`);
 });
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
-  console.log('client is viewing urlDatabase.json file');
+
+  serverMsg('client is viewing urlDatabase.json file');
 });
 
 // Example to use HTML Tags inside of VS (Not Required...)
@@ -70,50 +88,50 @@ app.get("/urls.json", (req, res) => {
 //   res.send("<html><body>Hello <b>World</b></body></html>\n");
 
 app.get("/urls", (req, res) => {
-  const userID = req.cookies.user.id;
-  const user = users[userID]
-  
+  const user = users[getUserByEmail(req)]
   const templateVars = { urls: urlDatabase, user};
+
   res.render("urls_index", templateVars);
-  console.log('Client is viewing URLs index');
+
+  serverMsg('Client is viewing URLs index');
 });
 
 app.get("/urls/new", (req, res) => { // page to create new URL if not in database
-  const userID = req.cookies.user.id;
-  const user = users[userID]
-
+  const user = users[getUserByEmail(req)]
   const templateVars = {user};
+
   res.render("urls_new", templateVars);
-  console.log('Client is viewing URL creation page');
+
+  serverMsg('Client is viewing URL creation page');
 });
 
 app.get("/urls/:id", (req, res) => { // Redirect to summary ID page
   const id = req.params.id;
   const longURL = urlDatabase[id];
-
-  const userID = req.cookies.user.id;
-  const user = users[userID]
-
+  const user = users[getUserByEmail(req)]
   const templateVars = { id, longURL, user};
 
   res.render("urls_show", templateVars);
-  console.log(`Client is viewing ${id} (${longURL}) summary page`);
+
+  serverMsg(`Client is viewing ${id} (${longURL}) summary page`);
 });
 
 app.get("/u/:id", (req, res) => {  // Redirect to actual website
   const id = req.params.id;
   const longURL = urlDatabase[id];
-  //console.log(urlDatabase[id])
-  console.log(`Client is being redircted: ${longURL}`);
+
+  serverMsg(`Client is being redircted: ${longURL}`);
+
   res.redirect(longURL);
 });
 
 app.get("/register", (req,res) => {
-  const userID = req.cookies.user.id;
-  const user = users[userID]
+  const user = users[getUserByEmail(req)]
   const templateVars = {user};
+
   res.render("urls_register", templateVars)
-  console.log(`Client is veiwing urls/register`);
+
+  serverMsg(`Client is veiwing urls/register`);
 })
 
 
@@ -124,10 +142,13 @@ app.get("/register", (req,res) => {
 app.post("/urls/:id/delete", (req, res) => {
   const id = req.params.id;
   const longURL = urlDatabase[id];
-  console.log(`Client delete request for: ${id} (${longURL})`);
+
+  serverMsg(`Client delete request for: ${id} (${longURL})`);
+
   delete urlDatabase[id]; // Delete requested item set by delete button
   res.redirect('/urls');
-  console.log('Client is being redirected to: /urls/');
+
+  serverMsg('Client is being redirected to: /urls/');
 });
 
 //------Update existing URL with new LongURL------//
@@ -136,60 +157,72 @@ app.post("/urls/:id/update", (req, res) => {
   let longURL = urlDatabase[id];
   const editedUrl = req.body.editUrl;
 
-  console.log(`Client update request for: ${id} (${longURL})`);
+  serverMsg(`Client update request for: ${id} (${longURL})`);
 
-  if (editedUrl.slice(0,8) === 'https://' || editedUrl.slice(0,7) === 'http://') {
-    urlDatabase[id] = editedUrl; // do not add https:// if already included in address
-  } else {
-    urlDatabase[id] = `https://${editedUrl}`;  // check if contains http: already
-  }
+  urlDatabase[id] = httpCheck(editedUrl) // update long URL and checks for http
 
   res.redirect(`/urls`); // redirect to URLs index
   longURL = urlDatabase[id]; // update longURL variable after edit
-  console.log(`New URL: ${id}(${longURL})`);
-  console.log('Client is being redirected to: /urls/');
+
+  serverMsg(`New URL: ${id}(${longURL})`);
+  serverMsg('Client is being redirected to: /urls/');
 });
 
 //------Add new URL------//
 app.post("/urls", (req, res) => {
-  console.log(`Client request to add short url: ${req.body}`);
+  serverMsg(`Client request to add short url: ${req.body}`);
 
   const randomName = generateRandomString();
   const newLongUrl = req.body.longURL;
 
-  if (newLongUrl.slice(0,8) === 'https://' || newLongUrl.slice(0,7) === 'http://') {
-    urlDatabase[randomName] = newLongUrl;  // do not add https:// if already included in address
-  } else {
-    urlDatabase[randomName] = `https://${newLongUrl}`;  // check if contains http: already
-  }
+  urlDatabase[randomName] = httpCheck(newLongUrl) // Adds new URL and checks for http
 
   res.redirect(`/urls/${randomName}`);
-  console.log('Client is being redirected to: /urls/');
+
+  serverMsg('Client is being redirected to: /urls/');
 });
 
 //------Login requests------//
 app.post("/login", (req, res) => {
   const userName = req.body.username; // was req.body.username
+
   res.cookie('username', userName);
-  console.log(`Client login request for: ${userName}`);
   res.redirect('back');
+
+  serverMsg(`Client login request for: ${userName}`);
 });
 
 //------Logout requests------//
 app.post("/logout", (req, res) => {
   const username = req.cookies.username;
-  console.log(`logout request for ${username}`);
-  res.clearCookie('username');
+
+  serverMsg(`logout request for ${username}`);
+  
+  res.clearCookie('user');
   res.redirect('/urls');
-  console.log('Client is being redirected to: /urls/');
+
+  serverMsg('Client is being redirected to: /urls/');
 });
 
 //------User Registration------//
 app.post("/register", (req,res) => {
+if (!req.body.email || !req.body.password) {
+  res.status(400).send('Invalid Username/Address')
+  serverMsg(`Server response 400: Invalid username/address entered: ${req.body.email, req.body.password}`)
+}
+
+for (const user in users) {
+  if (req.body.email === users[user].email) {
+    res.status(400).send('email already exists.')
+    serverMsg(`Server response 400: Email ${req.body.email} already exists`)
+  }
+}
+
 const email = req.body.email
 const password = req.body.password
 const randomID = generateRandomString()
-console.log(`User creation request for: @: ${email} P: ${password}`)
+
+serverMsg(`User creation request for: @: ${email} P: ${password}`)
 
 users[randomID] = {
   id: randomID,
@@ -197,8 +230,9 @@ users[randomID] = {
   password
 }
 res.cookie('user', users[randomID])
-res.redirect('back');
-console.log(`User ${email} created successfully, redirect to /urls.`)
+res.redirect('/urls');
+
+serverMsg(`User ${email} created successfully, redirect to /urls.`)
 });
 
 
