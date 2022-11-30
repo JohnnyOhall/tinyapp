@@ -142,12 +142,13 @@ app.get("/register", (req,res) => {
   serverMsg(`Client is veiwing urls/register`);
 });
 
+// Login Page
 app.get("/login", (req, res) => {
   const user = users[getUserByEmail(req)];
   const templateVars = {user};
 
   res.render("urls_login", templateVars);
-})
+});
 
 
 
@@ -197,41 +198,19 @@ app.post("/urls", (req, res) => {
   serverMsg('Client is being redirected to: /urls/');
 });
 
-//------Login requests------//
-// app.post("/login", (req, res) => {
-//   const userName = req.body.username; // was req.body.username
-
-//   res.cookie('username', userName);
-//   res.redirect('back');
-
-//   serverMsg(`Client login request for: ${userName}`);
-// });
-
-//------Logout requests------//
-app.post("/logout", (req, res) => {
-  const username = req.cookies.username;
-
-  serverMsg(`logout request for ${username}`);
-  
-  res.clearCookie('user');
-  res.redirect('/urls');
-
-  serverMsg('Client is being redirected to: /urls/');
-});
-
 //------User Registration------//
 app.post("/register", (req,res) => {
   if (!req.body.email || !req.body.password) {
     res.status(400).send('Invalid Username/Address');
     serverMsg(`Server response 400: Invalid username/address entered: ${req.body.email, req.body.password}`);
-    return
+    return;
   }
 
   for (const user in users) {
     if (req.body.email === users[user].email) {
       res.status(400).send('email already exists.');
       serverMsg(`Server response 400: Email ${req.body.email} already exists`);
-      return
+      return;
     }
   }
 
@@ -256,23 +235,23 @@ app.post("/register", (req,res) => {
 
 app.post("/login", (req, res) => {
 
-  serverMsg(`this happened: ${req.body}`)
+  serverMsg(`this happened: ${req.body}`);
 
   // check if post input is valid
   if (!req.body.email || !req.body.password) {
     res.status(400).send('Invalid Username/Address');
     serverMsg(`Server response 400: Invalid username/address entered: ${req.body.email, req.body.password}`);
-    return
+    return;
   }
 
-  let registered = false
+  let registered = false;
   let userID;
 
   // Check if email exists in database
   for (const user in users) {
     if (req.body.email === users[user].email) {
-      userID = user 
-      registered = true
+      userID = user;
+      registered = true;
     }
   }
 
@@ -280,18 +259,18 @@ app.post("/login", (req, res) => {
 
   // Return 400 error if email is not found in database
   if (!registered) {
-    res.status(400).send('Email not found, please <a href="/register">Register here')
-    serverMsg(`client login attempt with email: ${email}, server error: 400, email does not exist`)
-    return
+    res.status(400).send('Email not found, please <a href="/register">Register here');
+    serverMsg(`client login attempt with email: ${email}, server error: 400, email does not exist`);
+    return;
   }
 
-  const password = req.body.password
+  const password = req.body.password;
 
   // Check if password matches database password
-  if (users[userID].password !== password){
-    res.status(400).send('Invalid password')
-    serverMsg('client entered invalid password, server error: 400')
-    return
+  if (users[userID].password !== password) {
+    res.status(400).send('Invalid password');
+    serverMsg('client entered invalid password, server error: 400');
+    return;
   }
 
   // Set object to pass to cookie
@@ -299,11 +278,23 @@ app.post("/login", (req, res) => {
     id: userID,
     email,
     password
-  }
+  };
 
   // Successful Login, set cookie and redirect to /urls
-  res.cookie('user', cookieID)
-  res.redirect('/urls')
+  res.cookie('user', cookieID);
+  res.redirect('/urls');
 
-  serverMsg(`Login to user: ${userID} (${email}) [SUCCESS]. Redirecting to /urls`)
+  serverMsg(`Login to user: ${userID} (${email}) [SUCCESS]. Redirecting to /urls`);
+});
+
+//------Logout requests------//
+app.post("/logout", (req, res) => {
+  const username = req.cookies.username;
+
+  serverMsg(`logout request for ${username}`);
+  
+  res.clearCookie('user');
+  res.redirect('/urls');
+
+  serverMsg('Client is being redirected to: /urls/');
 });
