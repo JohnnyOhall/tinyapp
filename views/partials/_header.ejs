@@ -18,23 +18,32 @@
     </div>
 
 
-    <!--LOGIN BUTTON-->
+    <!--LOGIN BUTTON (not Logged in)-->
     <% if (!user){ %>
       <div class="collapse navbar-collapse" id="navbarNavAltMarkup"></div>
-      <form method="POST" action="/login/"><input type="text" name="username" placeholder="Username"
-          style="width: 200px; margin: 1em;" />
-        <button type="submit" class="btn btn-success btn-sm"
-          style="float: right; width: 150px; margin: 1em; border: 1px solid #ffffff;">Login</button>
+      <form action="/login">
+        <span class="navbar-text" style="margin: 0.5em">Not a TinyApp'er? <a href="/register">Register</a></span>
+        <button 
+          type="submit" 
+          class="btn btn-success btn-sm"
+          style="float: right; width: 150px; margin: 1em; border: 1px solid #ffffff;"
+        >Login</button>
       </form>
       </div>
-      <% } else if (user){ %>
-        <div class="collapse navbar-collapse" id="navbarNavAltMarkup"></div>
-        <span class="navbar-brand">Logged in as: <%= user.email%></span>
-        <form method="POST" action="/logout">
-          <button type="submit" class="btn btn-success btn-sm"
-            style="float: right; width: 150px; margin: 1em; border: 1px solid #ffffff;">Logout</button>
-        </form>
-        </div>
-        <% } %>
+
+    <!--LOGOUT BUTTON (Logged in)-->
+    <% } else if (user){ %>
+      <div class="collapse navbar-collapse" id="navbarNavAltMarkup"></div>
+      <span class="navbar-text" style="margin: 0.5em">Logged in as: <%= user.email%></span>
+      <form method="POST" action="/logout">
+        <button 
+          type="submit" 
+          class="btn btn-success btn-sm"
+          style="float: right; width: 150px; margin: 1em; border: 1px solid #ffffff;"
+        >Logout</button>
+      </form>
+      </div>
+    <% } %>
+    
   </nav>
 </header>
