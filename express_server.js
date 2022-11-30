@@ -123,15 +123,6 @@ app.post("/urls/:id/update", (req, res) => {
   console.log('Client is being redirected to: /urls/');
 });
 
-//------view specific URL summary page------//
-app.post("/urls/:id/", (req, res) => {
-  const id = req.params.id;
-  let longURL = urlDatabase[id];
-
-  res.redirect(`/urls/${id}`);
-  console.log(`Client request to view ${id} (${longURL}) summary page`);
-});
-
 //------Add new URL------//
 app.post("/urls", (req, res) => {
   console.log(`Client request to add short url: ${req.body}`);
