@@ -18,12 +18,14 @@ const express = require("express");
 const cookieParser = require("cookie-parser");
 const app = express();
 const PORT = 8080; // default port 8080
+const serverMsg = console.log;
 
+
+// ----------------------------------- MIDDLEWARE ----------------------------------- //
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-const serverMsg = console.log;
 
 // -------------------------------- GLOBAL FUNCTIONS -------------------------------- //
 
@@ -50,14 +52,19 @@ const httpCheck = (newURL) => {
   }
 };
 
+// Function to check if invalid form submission was sent in POST
 const invalidCheck = (req, res) => {
-  if (!req.body.email || !req.body.password) {
-    serverMsg(`Server response 400: Invalid username/address entered: ${req.body.email, req.body.password}`);
+  const email = req.body.email
+  const password = req.body.password
+
+  if (!email || !password) {
+    serverMsg(`Server response 400: Invalid username/address entered: ${email, password}`);
     res.status(400).send('Invalid Username/Address');
     return;
   }
 };
 
+//Check if user email exists in database and returns userID if it does
 const registeredCheck = (input) => {
   for (const user in users) {
     if (input === users[user].email) {
@@ -66,6 +73,7 @@ const registeredCheck = (input) => {
   }
 };
 
+// Check if user is logged in using cookie and checking credentials
 const loggedIn = (req) => {
   if (!req.cookies.user) {
     return false;
@@ -87,10 +95,36 @@ const loggedIn = (req) => {
   return true;
 };
 
+// Function to check URLs linked to userID and return them.
+const userDB = (user) => {
+  let obj = {}
+  for (const keys in urlDatabase){
+    if (urlDatabase[keys].userID === user.id){
+      obj[keys] = urlDatabase[keys]
+    }    
+  }
+  return obj
+}
+
+
 // ------------------------------------ DATABASE -------------------------------------//
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "user3RandomID",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "user3RandomID",
+  },
+  b6rrxQ: {
+    longURL: "https://www.nhl.com",
+    userID: "userRandomID",
+  },
+  a3Bo69: {
+    longURL: "https://www.msn.com",
+    userID: "user2RandomID",
+  },
 };
 
 const users = {
@@ -103,6 +137,11 @@ const users = {
     id: "user2RandomID",
     email: "user2@example.com",
     password: "dishwasher-funk",
+  },
+  user3RandomID: {
+    id: "user3RandomID",
+    email: "john.ohalloran@telus.com",
+    password: "1234",
   },
 };
 
@@ -128,13 +167,14 @@ app.get("/urls.json", (req, res) => {
 
 // page to list all saved urls
 app.get("/urls", (req, res) => {
-  const user = users[getUserByEmail(req)];
-  const templateVars = { urls: urlDatabase, user};
-  
   if (!loggedIn(req)) {
     serverMsg(`Client is not logged-in, redirect to /login`);
     return res.redirect('/login');
   }
+
+  const user = users[getUserByEmail(req)];
+  const userUrls = userDB(user)
+  const templateVars = { urls: userUrls, user};
 
   res.render("urls_index", templateVars);
 
@@ -143,13 +183,13 @@ app.get("/urls", (req, res) => {
 
 // page to create new URL if not in database
 app.get("/urls/new", (req, res) => {
-  const user = users[getUserByEmail(req)];
-  const templateVars = {user};
-
   if (!loggedIn(req)) {
     serverMsg(`Client is not logged-in, redirect to /login`);
     return res.redirect('/login');
   }
+
+  const user = users[getUserByEmail(req)];
+  const templateVars = {user};
 
   res.render("urls_new", templateVars);
 
@@ -158,23 +198,25 @@ app.get("/urls/new", (req, res) => {
 
 // Specific summary page unique for each id
 app.get("/urls/:id", (req, res) => {
-  const id = req.params.id;
-  const longURL = urlDatabase[id];
-  const user = users[getUserByEmail(req)];
-  const templateVars = { id, longURL, user};
-
   if (!loggedIn(req)) {
     serverMsg(`Client is not logged-in, redirect to /login`);
     return res.redirect('/login');
   }
 
+  const id = req.params.id;
+  const user = users[getUserByEmail(req)];
+  const userUrls = userDB(user)
+  const longURL = userUrls[id];
+  const templateVars = { id, longURL, user};
+
   if (!longURL) {
+    serverMsg(`client requested shortURL: ${id}. Does not exist, Error 404 sent`)
     return res.status(404).send('Error 404: TinyURL not found!');
   }
 
   res.render("urls_show", templateVars);
 
-  serverMsg(`Client is viewing ${id} (${longURL}) summary page`);
+  serverMsg(`Client is viewing ${id} (${longURL.longURL}) summary page`);
 });
 
 // Redirect to actual website using TinyApp short URL
@@ -193,13 +235,13 @@ app.get("/u/:id", (req, res) => {
 
 // Register page to add user to database
 app.get("/register", (req,res) => {
-  const user = users[getUserByEmail(req)];
-  const templateVars = {user};
-
   if (loggedIn(req)) {
     serverMsg(`Client is already logged in to: ${user.email}, redirect to /urls`);
     return res.redirect('/urls');
   }
+
+  const user = users[getUserByEmail(req)];
+  const templateVars = {user};
 
   res.render("urls_register", templateVars);
 
@@ -208,13 +250,13 @@ app.get("/register", (req,res) => {
 
 // Login Page
 app.get("/login", (req, res) => {
-  const user = users[getUserByEmail(req)];
-  const templateVars = {user};
-
   if (loggedIn(req)) {
     serverMsg(`Client is already logged in to: ${user.email}, redirect to /urls`);
     return res.redirect('/urls');
   }
+  
+  const user = users[getUserByEmail(req)];
+  const templateVars = {user};
 
   res.render("urls_login", templateVars);
 
@@ -234,8 +276,21 @@ app.post("/urls/:id/delete", (req, res) => {
   }
   
   const id = req.params.id;
-  const longURL = urlDatabase[id];
-  
+  const longURL = urlDatabase[id].longURL;
+  const user = users[getUserByEmail(req)];
+  let userUrls = {}
+
+  for (const keys in urlDatabase){
+    if (urlDatabase[keys].userID === user.id){
+      userUrls[keys] = urlDatabase[keys]
+    }    
+  }
+
+  if (!userUrls[id]){
+    return res.status(404).send('Error 404: TinyURL not found!');
+  } 
+
+
   serverMsg(`Client delete request for: ${id} (${longURL})`);
 
   delete urlDatabase[id]; // Delete requested item set by delete button
@@ -253,15 +308,19 @@ app.post("/urls/:id/update", (req, res) => {
   }
   
   const id = req.params.id;
-  let longURL = urlDatabase[id];
+  const user = users[getUserByEmail(req)];
   const editedUrl = req.body.editUrl;
+  const userUrls = userDB(user)
+
+  let longURL = userUrls[id].longURL;
 
   serverMsg(`Client update request for: ${id} (${longURL})`);
 
-  urlDatabase[id] = httpCheck(editedUrl); // update long URL and checks for http
+  urlDatabase[id].longURL = httpCheck(editedUrl); // update long URL and checks for http
 
   res.redirect(`/urls`); // redirect to URLs index
-  longURL = urlDatabase[id]; // update longURL variable after edit
+
+  longURL = urlDatabase[id].longURL; // update longURL variable after edit
 
   serverMsg(`New URL: ${id}(${longURL})`);
   serverMsg('Client is being redirected to: /urls/');
@@ -277,10 +336,16 @@ app.post("/urls", (req, res) => {
 
   serverMsg(`Client request to add short url: ${req.body}`);
 
-  const randomName = generateRandomString();
-  const newLongUrl = req.body.longURL;
 
-  urlDatabase[randomName] = httpCheck(newLongUrl); // Adds new URL and checks for http
+  const randomName = generateRandomString();
+  const newLongUrl = req.body.longURL
+  const user = users[getUserByEmail(req)]
+
+  
+  urlDatabase[randomName] = {
+    longURL: httpCheck(newLongUrl), // Adds new URL and checks for http
+    userID: user.id // Assigns to logged in user
+  }
 
   res.redirect(`/urls/${randomName}`);
 
