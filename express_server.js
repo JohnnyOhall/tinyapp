@@ -96,7 +96,7 @@ const loggedIn = (req) => {
 };
 
 // Function to check URLs linked to userID and return them.
-const userDB = (user) => {
+const urlsForUser = (user) => {
   let obj = {}
   for (const keys in urlDatabase){
     if (urlDatabase[keys].userID === user.id){
@@ -173,7 +173,7 @@ app.get("/urls", (req, res) => {
   }
 
   const user = users[getUserByEmail(req)];
-  const userUrls = userDB(user)
+  const userUrls = urlsForUser(user)
   const templateVars = { urls: userUrls, user};
 
   res.render("urls_index", templateVars);
@@ -205,7 +205,7 @@ app.get("/urls/:id", (req, res) => {
 
   const id = req.params.id;
   const user = users[getUserByEmail(req)];
-  const userUrls = userDB(user)
+  const userUrls = urlsForUser(user)
   const longURL = userUrls[id];
   const templateVars = { id, longURL, user};
 
@@ -310,7 +310,7 @@ app.post("/urls/:id/update", (req, res) => {
   const id = req.params.id;
   const user = users[getUserByEmail(req)];
   const editedUrl = req.body.editUrl;
-  const userUrls = userDB(user)
+  const userUrls = urlsForUser(user)
 
   let longURL = userUrls[id].longURL;
 
