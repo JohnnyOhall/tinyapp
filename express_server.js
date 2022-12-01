@@ -58,14 +58,34 @@ const invalidCheck = (req, res) => {
   }
 };
 
-const registeredCheck = (req) => {
+const registeredCheck = (input) => {
   for (const user in users) {
-    if (req.body.email === users[user].email) {
+    if (input === users[user].email) {
       return user;
     }
   }
 };
 
+const loggedIn = (req) => {
+  if (!req.cookies.user) {
+    return false;
+  }
+
+  const emailCookie = req.cookies.user.email;
+  const passwordCookie = req.cookies.user.password;
+
+  if (!registeredCheck(emailCookie)) {
+    return false;
+  }
+
+  const userID = registeredCheck(emailCookie);
+
+  if (users[userID].password !== passwordCookie) {
+    return false;
+  }
+
+  return true;
+};
 
 // ------------------------------------ DATABASE -------------------------------------//
 const urlDatabase = {
@@ -110,6 +130,11 @@ app.get("/urls.json", (req, res) => {
 app.get("/urls", (req, res) => {
   const user = users[getUserByEmail(req)];
   const templateVars = { urls: urlDatabase, user};
+  
+  if (!loggedIn(req)) {
+    serverMsg(`Client is not logged-in, redirect to /login`);
+    return res.redirect('/login');
+  }
 
   res.render("urls_index", templateVars);
 
@@ -120,6 +145,11 @@ app.get("/urls", (req, res) => {
 app.get("/urls/new", (req, res) => {
   const user = users[getUserByEmail(req)];
   const templateVars = {user};
+
+  if (!loggedIn(req)) {
+    serverMsg(`Client is not logged-in, redirect to /login`);
+    return res.redirect('/login');
+  }
 
   res.render("urls_new", templateVars);
 
@@ -133,6 +163,15 @@ app.get("/urls/:id", (req, res) => {
   const user = users[getUserByEmail(req)];
   const templateVars = { id, longURL, user};
 
+  if (!loggedIn(req)) {
+    serverMsg(`Client is not logged-in, redirect to /login`);
+    return res.redirect('/login');
+  }
+
+  if (!longURL) {
+    return res.status(404).send('Error 404: TinyURL not found!');
+  }
+
   res.render("urls_show", templateVars);
 
   serverMsg(`Client is viewing ${id} (${longURL}) summary page`);
@@ -142,6 +181,10 @@ app.get("/urls/:id", (req, res) => {
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
   const longURL = urlDatabase[id];
+
+  if (!longURL) {
+    return res.status(404).send('Error 404: TinyURL not found!');
+  }
 
   serverMsg(`Client is being redircted: ${longURL}`);
 
@@ -153,6 +196,11 @@ app.get("/register", (req,res) => {
   const user = users[getUserByEmail(req)];
   const templateVars = {user};
 
+  if (loggedIn(req)) {
+    serverMsg(`Client is already logged in to: ${user.email}, redirect to /urls`);
+    return res.redirect('/urls');
+  }
+
   res.render("urls_register", templateVars);
 
   serverMsg(`Client is veiwing urls/register`);
@@ -163,7 +211,14 @@ app.get("/login", (req, res) => {
   const user = users[getUserByEmail(req)];
   const templateVars = {user};
 
+  if (loggedIn(req)) {
+    serverMsg(`Client is already logged in to: ${user.email}, redirect to /urls`);
+    return res.redirect('/urls');
+  }
+
   res.render("urls_login", templateVars);
+
+  serverMsg('Client is viewing login page');
 });
 
 
@@ -172,9 +227,15 @@ app.get("/login", (req, res) => {
 
 //------Delete short URL key------//
 app.post("/urls/:id/delete", (req, res) => {
+  
+  if (!loggedIn(req)) {
+    serverMsg(`Client is not logged-in, redirect to /login`);
+    return res.redirect('/login');
+  }
+  
   const id = req.params.id;
   const longURL = urlDatabase[id];
-
+  
   serverMsg(`Client delete request for: ${id} (${longURL})`);
 
   delete urlDatabase[id]; // Delete requested item set by delete button
@@ -185,6 +246,12 @@ app.post("/urls/:id/delete", (req, res) => {
 
 //------Update existing URL with new LongURL------//
 app.post("/urls/:id/update", (req, res) => {
+  
+  if (!loggedIn(req)) {
+    serverMsg(`Client is not logged-in, redirect to /login`);
+    return res.redirect('/login');
+  }
+  
   const id = req.params.id;
   let longURL = urlDatabase[id];
   const editedUrl = req.body.editUrl;
@@ -202,6 +269,12 @@ app.post("/urls/:id/update", (req, res) => {
 
 //------Add new URL------//
 app.post("/urls", (req, res) => {
+
+  if (!loggedIn(req)) {
+    serverMsg(`Client is not logged-in, redirect to /login`);
+    return res.redirect('/login');
+  }
+
   serverMsg(`Client request to add short url: ${req.body}`);
 
   const randomName = generateRandomString();
@@ -217,16 +290,16 @@ app.post("/urls", (req, res) => {
 //------User Registration------//
 app.post("/register", (req,res) => {
   invalidCheck(req, res);
+  
+  const email = req.body.email;
+  const password = req.body.password;
+  const randomID = generateRandomString();
 
-  if (registeredCheck(req)) {
+  if (registeredCheck(email)) {
     res.status(401).send('email already exists, please <a href="/login">login</a>.');
     serverMsg(`Server response 400: Email ${req.body.email} already exists`);
     return;
   }
-
-  const email = req.body.email;
-  const password = req.body.password;
-  const randomID = generateRandomString();
 
   serverMsg(`User creation request for: @: ${email} P: ${password}`);
 
@@ -250,9 +323,9 @@ app.post("/login", (req, res) => {
   invalidCheck(req, res);
 
   // Set userID and email
-  let userID = registeredCheck(req);
   const email = req.body.email;
   const password = req.body.password;
+  let userID = registeredCheck(email);
 
   // Return 400 error if UserID/Email is not found in database
   if (!userID) {
