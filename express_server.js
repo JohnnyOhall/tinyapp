@@ -54,8 +54,8 @@ const httpCheck = (newURL) => {
 
 // Function to check if invalid form submission was sent in POST
 const invalidCheck = (req, res) => {
-  const email = req.body.email
-  const password = req.body.password
+  const email = req.body.email;
+  const password = req.body.password;
 
   if (!email || !password) {
     serverMsg(`Server response 400: Invalid username/address entered: ${email, password}`);
@@ -97,14 +97,15 @@ const loggedIn = (req) => {
 
 // Function to check URLs linked to userID and return them.
 const urlsForUser = (user) => {
-  let obj = {}
-  for (const keys in urlDatabase){
-    if (urlDatabase[keys].userID === user.id){
-      obj[keys] = urlDatabase[keys]
-    }    
+  let obj = {};
+  
+  for (const keys in urlDatabase) {
+    if (urlDatabase[keys].userID === user.id) {
+      obj[keys] = urlDatabase[keys];
+    }
   }
-  return obj
-}
+  return obj;
+};
 
 
 // ------------------------------------ DATABASE -------------------------------------//
@@ -173,7 +174,7 @@ app.get("/urls", (req, res) => {
   }
 
   const user = users[getUserByEmail(req)];
-  const userUrls = urlsForUser(user)
+  const userUrls = urlsForUser(user);
   const templateVars = { urls: userUrls, user};
 
   res.render("urls_index", templateVars);
@@ -205,12 +206,12 @@ app.get("/urls/:id", (req, res) => {
 
   const id = req.params.id;
   const user = users[getUserByEmail(req)];
-  const userUrls = urlsForUser(user)
+  const userUrls = urlsForUser(user);
   const longURL = userUrls[id];
   const templateVars = { id, longURL, user};
 
   if (!longURL) {
-    serverMsg(`client requested shortURL: ${id}. Does not exist, Error 404 sent`)
+    serverMsg(`client requested shortURL: ${id}. Does not exist, Error 404 sent`);
     return res.status(404).send('Error 404: TinyURL not found!');
   }
 
@@ -278,17 +279,17 @@ app.post("/urls/:id/delete", (req, res) => {
   const id = req.params.id;
   const longURL = urlDatabase[id].longURL;
   const user = users[getUserByEmail(req)];
-  let userUrls = {}
+  let userUrls = {};
 
-  for (const keys in urlDatabase){
-    if (urlDatabase[keys].userID === user.id){
-      userUrls[keys] = urlDatabase[keys]
-    }    
+  for (const keys in urlDatabase) {
+    if (urlDatabase[keys].userID === user.id) {
+      userUrls[keys] = urlDatabase[keys];
+    }
   }
 
-  if (!userUrls[id]){
+  if (!userUrls[id]) {
     return res.status(404).send('Error 404: TinyURL not found!');
-  } 
+  }
 
 
   serverMsg(`Client delete request for: ${id} (${longURL})`);
@@ -310,7 +311,7 @@ app.post("/urls/:id/update", (req, res) => {
   const id = req.params.id;
   const user = users[getUserByEmail(req)];
   const editedUrl = req.body.editUrl;
-  const userUrls = urlsForUser(user)
+  const userUrls = urlsForUser(user);
 
   let longURL = userUrls[id].longURL;
 
@@ -338,14 +339,14 @@ app.post("/urls", (req, res) => {
 
 
   const randomName = generateRandomString();
-  const newLongUrl = req.body.longURL
-  const user = users[getUserByEmail(req)]
+  const newLongUrl = req.body.longURL;
+  const user = users[getUserByEmail(req)];
 
   
   urlDatabase[randomName] = {
     longURL: httpCheck(newLongUrl), // Adds new URL and checks for http
     userID: user.id // Assigns to logged in user
-  }
+  };
 
   res.redirect(`/urls/${randomName}`);
 
