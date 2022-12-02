@@ -32,7 +32,7 @@ app.use(cookieSession({
 
   // Cookie Options
   maxAge: 24 * 60 * 60 * 1000 // 24 hours
-}))
+}));
 
 
 // -------------------------------- GLOBAL FUNCTIONS -------------------------------- //
@@ -372,10 +372,10 @@ app.post("/login", (req, res) => {
 app.post("/logout", (req, res) => {
   serverMsg(`logout request`);
   
-  req.session = null
+  req.session = null;
   res.redirect('/login');
 
   serverMsg('Client is being redirected to: /login');
 });
 
-module.exports = {urlDatabase, users}
+module.exports = {urlDatabase, users};
