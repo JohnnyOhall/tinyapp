@@ -15,45 +15,27 @@
 
 // -------------------------- GLOBAL VARIABLES && REQUIRES -------------------------- //
 const express = require("express");
-const cookieParser = require("cookie-parser");
+const cookieSession = require("cookie-session");
 const app = express();
 const PORT = 8080; // default port 8080
 const serverMsg = console.log;
 const bcrypt = require("bcryptjs");
+const {generateRandomString, httpCheck, getUserByEmail} = require('./helpers');
 
 
 // ----------------------------------- MIDDLEWARE ----------------------------------- //
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['charmander', 'squirtle', 'bulbasaur', 'pikachu'],
+
+  // Cookie Options
+  maxAge: 24 * 60 * 60 * 1000 // 24 hours
+}))
 
 
 // -------------------------------- GLOBAL FUNCTIONS -------------------------------- //
-
-// Generates random 6 character string for new URL
-const generateRandomString = () => {
-  return ((Math.random() + 1) * 0x10000).toString(36).substring(6);
-};
-
-// Function to check if user submitted URL has http:// or https://
-const httpCheck = (newURL) => {
-  if (newURL.slice(0,8) === 'https://' || newURL.slice(0,7) === 'http://') {
-    return newURL;  // do not add https:// if already included in address
-  } else {
-    return `https://${newURL}`;  // check if contains http: already
-  }
-};
-
-//Check if user email exists in database and returns userID if it does
-const registeredCheck = (input) => {
-  for (const user in users) {
-    if (input === users[user].email) {
-      return user;
-    }
-  }
-};
-
-// Function to check URLs linked to userID and return them.
 const urlsForUser = (user) => {
   let obj = {};
   
@@ -119,7 +101,7 @@ app.listen(PORT, () => {
 
 // page to list all saved urls
 app.get("/urls", (req, res) => {
-  const id = req.cookies.user;
+  const id = req.session.user;
   const user = users[id];
   
   if (!user) {
@@ -137,7 +119,7 @@ app.get("/urls", (req, res) => {
 
 // page to create new URL if not in database
 app.get("/urls/new", (req, res) => {
-  const id = req.cookies.user;
+  const id = req.session.user;
   const user = users[id];
 
   if (!user) {
@@ -154,7 +136,7 @@ app.get("/urls/new", (req, res) => {
 
 // Specific summary page unique for each id
 app.get("/urls/:id", (req, res) => {
-  const id = req.cookies.user;
+  const id = req.session.user;
   const user = users[id];
 
   if (!user) {
@@ -193,7 +175,7 @@ app.get("/u/:id", (req, res) => {
 
 // Register page to add user to database
 app.get("/register", (req,res) => {
-  const id = req.cookies.user;
+  const id = req.session.user;
   const user = users[id];
 
   if (user) {
@@ -210,7 +192,7 @@ app.get("/register", (req,res) => {
 
 // Login Page
 app.get("/login", (req, res) => {
-  const id = req.cookies.user;
+  const id = req.session.user;
   const user = users[id];
 
   if (user) {
@@ -231,7 +213,7 @@ app.get("/login", (req, res) => {
 
 //------Delete short URL key------//
 app.post("/urls/:id/delete", (req, res) => {
-  const id = req.cookies.user;
+  const id = req.session.user;
   const user = users[id];
 
   if (!user) {
@@ -258,7 +240,7 @@ app.post("/urls/:id/delete", (req, res) => {
 
 //------Update existing URL with new LongURL------//
 app.post("/urls/:id/update", (req, res) => {
-  const id = req.cookies.user;
+  const id = req.session.user;
   const user = users[id];
 
   if (!user) {
@@ -286,7 +268,7 @@ app.post("/urls/:id/update", (req, res) => {
 
 //------Add new URL------//
 app.post("/urls", (req, res) => {
-  const id = req.cookies.user;
+  const id = req.session.user;
   const user = users[id];
 
   if (!user) {
@@ -311,7 +293,7 @@ app.post("/urls", (req, res) => {
 
 //------User Registration------//
 app.post("/register", (req,res) => {
-  const id = req.cookies.user;
+  const id = req.session.user;
   const user = users[id];
 
   if (user) {
@@ -328,7 +310,7 @@ app.post("/register", (req,res) => {
     return;
   }
 
-  if (registeredCheck(email)) {
+  if (getUserByEmail(email, users)) {
     res.status(401).send('email already exists, please <a href="/login">login</a>.');
     serverMsg(`Server response 400: Email ${req.body.email} already exists`);
     return;
@@ -343,7 +325,7 @@ app.post("/register", (req,res) => {
   const newUser = {email, id: newId, password};
   users[newId] = newUser;
 
-  res.cookie('user', newId); // Set user cookie in browser
+  req.session.user = newId; // Set user cookie in browser
   res.redirect('/urls');
 
   serverMsg(`User ${email} created successfully, redirect to /urls.`);
@@ -351,7 +333,7 @@ app.post("/register", (req,res) => {
 
 //------Login requests------//
 app.post("/login", (req, res) => {
-  const id = req.cookies.user;
+  const id = req.session.user;
   const user = users[id];
 
   if (user) {
@@ -362,7 +344,7 @@ app.post("/login", (req, res) => {
   // Set userID and email
   const email = req.body.email;
   const password = req.body.password;
-  let registered = registeredCheck(email);
+  let registered = getUserByEmail(email, users);
  
 
   // Return 400 error if UserID/Email is not found in database
@@ -380,7 +362,7 @@ app.post("/login", (req, res) => {
   }
 
   // Successful Login, set cookie and redirect to /urls
-  res.cookie('user', registered);
+  req.session.user = registered;
   res.redirect('/urls');
 
   serverMsg(`Login to user: ${registered} (${email}) [SUCCESS]. Redirecting to /urls`);
@@ -390,8 +372,10 @@ app.post("/login", (req, res) => {
 app.post("/logout", (req, res) => {
   serverMsg(`logout request`);
   
-  res.clearCookie('user');
+  req.session = null
   res.redirect('/login');
 
   serverMsg('Client is being redirected to: /login');
 });
+
+module.exports = {urlDatabase, users}
