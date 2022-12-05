@@ -21,7 +21,19 @@ const getUserByEmail = (email,database) => {
   }
 };
 
+// Checks what longURLs belong to the logged in user and sends back new object for display
+const urlsForUser = (user, database) => {
+  let obj = {};
+  
+  for (const keys in database) {
+    if (database[keys].userID === user.id) {
+      obj[keys] = database[keys];
+    }
+  }
+  return obj;
+};
+
 // Function to check URLs linked to userID and return them.
 
 
-module.exports = {generateRandomString, httpCheck, getUserByEmail}
+module.exports = {generateRandomString, httpCheck, getUserByEmail, urlsForUser}
