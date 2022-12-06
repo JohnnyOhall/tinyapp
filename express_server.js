@@ -92,8 +92,15 @@ app.get("/urls/:id", (req, res) => {
   }
 
   const userUrls = urlsForUser(user, urlDatabase);
+
+  if (!userUrls[paramId]) {
+    return res.status(401).send('error: 401. You are unauthorized to view this page')
+  }
+
   const longURL = userUrls[paramId];
   const templateVars = { id: paramId, longURL, user};
+
+
 
   res.render("urls_show", templateVars);
 });
